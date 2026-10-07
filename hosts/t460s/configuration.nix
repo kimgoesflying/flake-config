@@ -13,8 +13,9 @@
 
   # Configure keymap in X11
   services.xserver.xkb = {
-    layout = "us";
-    variant = "";
+    layout = "us,ru";
+    variant = ",";
+    options = "grp:win_space_toggle";
   };
 
   # Enable CUPS to print documents
@@ -43,6 +44,7 @@
   # Laptop specific application wrappers
   programs.firefox.enable = true;
   programs.amnezia-vpn.enable = true;
+  services.libinput.enable = true;
 
   # Initial system installation profile reference
   system.stateVersion = "26.05";
