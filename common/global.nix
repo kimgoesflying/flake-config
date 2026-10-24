@@ -41,7 +41,7 @@
   '';
 
   # Command not found helper
-  programs.command-not-found.enable = true;
+  programs.nix-index.enable = true;
 
   # Global packages installed on every machine
   environment.systemPackages = with pkgs; [
