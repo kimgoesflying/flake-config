@@ -21,17 +21,33 @@
   services.displayManager.gdm.enable = false;
   services.desktopManager.gnome.enable = true;
 
-  # Enable Tuigreet TUI Login Manager with Session Scanning
+  # Настройка Greetd + Tuigreet
   services.greetd = {
     enable = true;
     settings = {
       default_session = {
-        # sessions scans the standard folders for both GNOME and Niri .desktop profiles
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd ${pkgs.niri}/bin/niri --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions:${config.services.displayManager.sessionData.desktops}/share/xsessions";
         user = "greeter";
+        command =
+          let
+            sessionDirs = [
+              "${config.services.displayManager.sessionData.desktops}/share/wayland-sessions"
+              "${config.services.displayManager.sessionData.desktops}/share/xsessions"
+            ];
+            sessionsPath = pkgs.lib.makeSearchPath "" sessionDirs;
+          in
+          # --cmd niri-session указывается как fallback без абсолютного пути, так как tuigreet запустит его через сессию пользователя после авторизации
+          "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-user-session --sessions '${sessionsPath}' --cmd niri-session";
       };
     };
   };
+
+  systemd.services.greetd.serviceConfig.Type = pkgs.lib.mkForce "simple";
+  systemd.services.greetd.serviceConfig.StandardInput = "tty";
+  systemd.services.greetd.serviceConfig.StandardOutput = "tty";
+  systemd.services.greetd.serviceConfig.StandardError = "journal";
+  systemd.services.greetd.serviceConfig.TTYReset = true;
+  systemd.services.greetd.serviceConfig.TTYVHangup = true;
+  systemd.services.greetd.serviceConfig.TTYVTDisallocate = true;
 
   security.pam.services.greetd.enableGnomeKeyring = true;
 
@@ -41,17 +57,6 @@
     font = "ter-v32n";
     packages = [ pkgs.terminus_font ];
     keyMap = "us";
-  };
-
-  # Smooth systemd configuration for fluid terminal login transitions
-  systemd.services.greetd.serviceConfig = {
-    Type = pkgs.lib.mkForce "simple";
-    StandardInput = "tty";
-    StandardOutput = "tty";
-    StandardError = "journal";
-    TTYReset = true;
-    TTYVHangup = true;
-    TTYVTDisallocate = true;
   };
 
   # Enable the Latest Niri compositor module from the flake
@@ -66,9 +71,9 @@
 
   programs.dms-shell = {
     enable = true;
-    enableDynamicTheming = true; # Automatically shifts system UI accents to match your wallpaper
+    enableDynamicTheming = true;
     systemd = {
-      enable = true;
+      enable = false;
     };
   };
 
@@ -105,19 +110,12 @@
   services.tlp = {
     enable = true;
     settings = {
-      # Принудительно заставляем TLP определять режим по источнику, а не по факту заряда
       TLP_DEFAULT_MODE = "AC";
       TLP_PERSISTENT_DEFAULT = 0;
-
-      # Настройки процессора (Убираем powersave для плавности анимаций)
       CPU_SCALING_GOVERNOR_ON_AC = "performance";
       CPU_SCALING_GOVERNOR_ON_BAT = "balanced";
-
-      # Настройка энергетической политики Intel (EPP)
       CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
       CPU_ENERGY_PERF_POLICY_ON_BAT = "balance_performance";
-
-      # Ваши пороги батареи (оставляем для здоровья аккумулятора)
       START_CHARGE_THRESH_BAT0 = 75;
       STOP_CHARGE_THRESH_BAT0 = 80;
       START_CHARGE_THRESH_BAT1 = 75;
