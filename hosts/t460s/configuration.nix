@@ -136,15 +136,14 @@
   };
 
   # Laptop specific application wrappers
-  programs.firefox = {
-    enable = true;
-    env = {
-      MOZ_ENABLE_WAYLAND = "1";
-    };
-  };
-
+  programs.firefox.enable = true;
   programs.amnezia-vpn.enable = true;
   services.libinput.enable = true;
+
+  # Заставляем Firefox и другие приложения нативно работать в Wayland
+  environment.sessionVariables = {
+    MOZ_ENABLE_WAYLAND = "1";
+  };
 
   # Initial system installation profile reference
   system.stateVersion = "26.05";
